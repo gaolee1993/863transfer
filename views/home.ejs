@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>动态并行传输</title>
+		<link rel="stylesheet" type="text/css" href="css/bar.css">
+		<link href="css/bootstrap.css" rel="stylesheet">
+    	<script src='lib/jquery.min.js'></script>
+    	<script src="lib/bootstrap.min.js" type="text/javascript"></script>
+		<style>
+		#search{
+			width:600px;
+			margin: 100px auto;
+			height: 80px;
+		}
+		#search form{
+			margin-left: 10px;
+			background-color: white;
+			float:left;
+			border: 1px solid grey;
+		}
+		#search input[type="text"]{
+			border:0;
+			outline:0;
+			width:250px;
+			height: 25px;
+			line-height: 25px;
+			float: left;
+			margin-bottom: 0;
+			padding: 2px;
+		}
+		#search input[type="button"]{
+			border:0;
+			background-image: url(img/search-button.png);
+			width:29px;
+			height: 29px;
+			float:left;
+			line-height: 33px;
+		}
+		#search select,label{
+			height: 30px;
+			line-height: 30px;
+			float:left;
+		}
+		#showmessage{
+			display: none;
+			overflow: auto;
+		}
+		#showmessage span:hover{
+			background-color: grey;
+		}
+		#top{
+			position: fixed;
+			right: 20px;
+			bottom: 20px;
+			display: none;
+		}
+		</style>
+	</head>
+	<body>
+		<header>
+			<div id="head">
+				<span>动态并行传输</span>
+					<ul id="nav">
+						<li><a href="#">文件搜索</a></li>
+						<li><a href="/transfer">文件传输</a></li>
+						<li><a href="/speed">实时速率</a></li>
+					</ul>
+				<% if(locals.user){ %>
+				<span class='user'><a href='/user/signout'>你好<%=user.name%>,退出</a></span>
+				<% }else{ %>
+				<span id="signinbtn" class='user'>登录</span>
+				<span id='signupbtn' class='user'>注册</span>
+				<% } %>
+			</div>
+		</header>
+		<div id="cover"></div>
+		<div class="mymodal" id="signin">
+			<h1>用户登录</h1>
+			<hr>
+			<form action="/user/signin" method="POST">
+				<div>
+					<label>用户名：</label>
+					<input type="text" name="user[name]" required><br>
+				</div>
+				<div>
+					<label>密码：</label>
+					<input type="password" name="user[password]" required><br>
+				</div>
+				<div style="width:120px;margin-top:50px">
+					<button type='submit' class="btn btn-primary">提交</button>
+					<button type='button' class="btn btn-primary">退出</button>
+				</div>
+			</form>
+		</div>
+		<div class="mymodal" id="signup">
+			<h1>用户注册</h1>
+			<hr>
+			<form action="/user/signup" method="POST">
+				<div>
+					<label>用户名：</label>
+					<input type="text" name="user[name]" required><br>
+				</div>
+				<div>
+					<label>密码：</label>
+					<input type="password" name="user[password]" required><br>
+				</div>
+				<div style="width:120px;margin-top:50px">
+					<button type='submit' class="btn btn-primary">提交</button>
+					<button type='button' class="btn btn-primary">退出</button>
+				</div>
+			</form>
+		</div>
+		<% if(locals.user){ %>
+		<div id="search">
+			<label>选择主机：</label>
+				<select>
+					<option>  </option>
+					<% if(hosts){
+						for(var i=0;i<hosts.length;i++){%>
+							<option><%=hosts[i].ip%></option>
+						<%}}%>
+				</select>
+			<form>
+				<input type="text" id='fileName'/>
+				<input style="display:none" />   
+				<input type="button" id="searchbtn" value=""/>
+			</form>
+		</div>
+		<% }%>
+		<div id='showmessage'>
+			<h1>搜索结果</h1>
+			<div></div>
+		</div>
+		<img src="/img/top.jpg" id="top">
+		<script>
+			window.onload=function(){
+				var file=$('#fileName')[0];
+				var host=$('select')[0];
+				var message=$('#showmessage')[0];
+				var result=$('#showmessage div')[0];
+				var leader=target=0,timer=null;
+				if($('#signinbtn')){
+					$('#signinbtn').click(function(){
+						$('#cover').css('display',"block");
+						$('#signin').css('display',"block");
+					});
+					$('#signupbtn').click(function(){
+						$('#cover').css('display',"block");
+						$('#signup').css('display',"block");
+					});
+					$('#signin button:nth-child(2)').click(function(){
+						$('#cover').css('display',"none");
+						$('#signin').css('display',"none");
+					});
+					$('#signup button:nth-child(2)').click(function(){
+						$('#cover').css('display',"none");
+						$('#signup').css('display',"none");
+					});
+				}
+				$('#fileName').focus(function(){
+					document.onkeydown=function(event){
+						var event=event||window.event;
+						if(event.keyCode==13){
+							search();
+						}
+					}
+				});
+				$('#searchbtn').click(search);
+				window.onscroll=function(){
+					scroll().top>0?show($('#top')):hide($('#top'));
+					leader=scroll().top;
+				}
+				$('#top').click(function(){
+					clearInterval(timer);
+					timer=setInterval(function(){
+						var step=(target-leader)/10;
+						leader=leader+step;
+						window.scrollTo(0,leader);
+						if(leader==target){
+							clearInterval(timer);
+						}
+					});
+				});
+				function scroll(){
+					if(window.pageYOffset !=null){
+						return {
+							top:window.pageYOffset,
+							left:window.pageXOffset
+						}
+					}else if(docuemnt.compatMode == 'CSS1Compat'){
+						return {
+							top:document.docuemntElement.scrollTop,
+							left:document.docuemntElement.scrollLeft
+						}
+					}
+					return {
+						top:document.body.scrollTop,
+						left:document.body.scrollLeft
+					}
+				}
+				function show(obj){
+					obj.css('display','block');
+				}
+				function hide(obj){
+					obj.css('display','none');
+				}
+				function search(){
+					if(!file.value){
+						alert("请输入文件名");
+					}else{
+						$.ajax({
+							type:'post',
+							url:'/search',
+							data:{
+								filename:file.value,
+								hostname:host.value
+							},
+							success:function(data){
+								var arr=data.split('\n');
+								var str='';
+								arr.forEach(function(elem,index,arr){
+									str+='<span>'+elem+'</span><br>';
+								})
+								result.innerHTML=str;
+								message.style.display="block";
+								// message.style.height=document.body.clientHeight-610+'px';
+							}
+						})
+					}
+				}
+			}
+		</script>
+	</body>
+</html>

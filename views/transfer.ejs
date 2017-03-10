@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>动态并行传输</title>
+		<link rel="stylesheet" type="text/css" href="css/bar.css">
+		<link href="css/bootstrap.css" rel="stylesheet">
+    	<script src='lib/jquery.min.js'></script>
+    	<script src="lib/bootstrap.min.js" type="text/javascript"></script>
+		<style>
+		#upload form{
+			width: 800px;
+			height:150px;
+			margin-left:50px;
+			margin-top: 70px;
+		}
+		#upload form div{
+			margin:20px auto;
+			height:20px;
+		}
+/*		label标签不能写成lable，样式不符时要考虑是不是选择器写错了*/
+		#upload form label{   
+			float:left;
+			width:20%;
+			text-align: right;
+			line-height: 30px;
+		}
+		#upload form select,input{
+			float:left;
+			width:20%;
+		}
+		#upload form div:last-child{
+			width: 120px;
+			margin:50px auto;
+		}
+		#upload button{
+			width:60px;
+			height:40px;
+			color:white;
+			line-height: 40px;
+			border-radius: 10px;
+			background-color: black;
+			outline-width: 0px;
+		}
+		#upload button:hover{
+			background-color: #99CCFF;
+		}
+		#transfer form{
+			width: 800px;
+			height:150px;
+			margin-left:50px;
+			margin-top:70px;
+		}
+		#transfer form div{
+			margin:20px auto;
+			height:20px;
+		}
+/*		label标签不能写成lable，样式不符时要考虑是不是选择器写错了*/
+		#transfer form label{   
+			float:left;
+			width:20%;
+			text-align: right;
+			line-height: 30px;
+		}
+		#transfer form select,input[type='file']{
+			float:left;
+			width:20%;
+		}
+		#transfer form div:last-child{
+			width: 120px;
+			margin:50px auto;
+		}
+		#transfer button{
+			width:60px;
+			height:40px;
+			color:white;
+			line-height: 40px;
+			border-radius: 10px;
+			background-color: black;
+			outline-width: 0px;
+		}
+		#transfer button:hover{
+			background-color: #99CCFF;
+		}
+		</style>
+	</head>
+	<body>
+		<header>
+		<div id="head">
+			<span>动态并行传输</span>
+				<ul id="nav">
+					<li><a href="/">文件搜索</a></li>
+					<li><a href="#">文件传输</a></li>
+					<li><a href="/speed">实时速率</a></li>
+				</ul>
+			<% if(locals.user){ %>
+			<span class='user'><a href='/user/signout'>你好<%=user.name%>,退出</a></span>
+			<% }else{ %>
+			<span id="signinbtn" class='user'>登录</span>
+			<span id='signupbtn' class='user'>注册</span>
+			<% } %>
+		</div>
+	</header>
+		<div id="cover"></div>
+		<div class="mymodal" id="signin">
+			<h1>用户登录</h1>
+			<form action="/user/signin" method="POST">
+				<div>
+					<label>用户名：</label>
+					<input type="text" name="user[name]" required><br>
+				</div>
+				<div>
+					<label>密码：</label>
+					<input type="password" name="user[password]" required><br>
+				</div>
+				<div style="width:200px;margin-top:60px">
+					<button type='submit' class="btn btn-primary">提交</button>
+					<button type='button' class="btn btn-primary">退出</button>
+				</div>
+			</form>
+		</div>
+		<div class="mymodal" id="signup">
+			<h1>用户注册</h1>
+			<form action="/user/signup" method="POST">
+				<div>
+					<label>用户名：</label>
+					<input type="text" name="user[name]" required><br>
+				</div>
+				<div>
+					<label>密码：</label>
+					<input type="password" name="user[password]" required><br>
+				</div>
+				<div style="width:200px;margin-top:60px">
+					<button type='submit' class="btn btn-primary">提交</button>
+					<button type='button' class="btn btn-primary">退出</button>
+				</div>
+			</form>
+		</div>
+        
+		<div class="tab-content">
+			<% if(locals.user){ %>
+			<ul class="nav nav-tabs" style="margin-top:70px">
+           		<li class="active"><a href="#transferR" data-toggle="tab">对等传输</a></li>
+            	<li><a href="#transferL" data-toggle="tab">本地传输</a></li>
+        	</ul>
+        	<div id='transferR' class="tab-pane active">
+				<div id="upload">
+					<form>
+						<div>
+						<label>源主机：</label>
+						<select id="source">
+							<option>  </option>
+							<% if(hosts){
+								for(var i=0;i<hosts.length;i++){%>
+									<option><%=hosts[i].ip%></option>
+								<%}}%>
+						</select>
+						<label>源文件路径：</label>
+						<input type="text" id="fileSource">	
+						</div>
+						<div>
+						<label>目的主机：</label>
+						<select id="destination">
+							<option>  </option>
+							<% if(hosts){
+								for(var i=0;i<hosts.length;i++){%>
+									<option><%=hosts[i].ip%></option>
+								<%}}%>
+						</select>
+						<label>目的路径：</label>
+						<input type="text" id="filedes">	
+						</div>
+
+						<div>
+						<button type="button">传输</button>
+						</div>
+					</form>
+				</div>
+			<div id="messages"></div>
+			</div>
+			<div id="transferL" class="tab-pane">
+				<div id="transfer">
+					<form>
+						<div>
+							<label>选择本地文件：</label>
+							<input type="file" id="fileSrc">
+							<label>设置文件权限：</label>
+							<input type="text" id="filePermission">
+						</div>
+						<div>
+							<label>目的服务器：</label>
+							<select id="fileDesHost">
+								<option>  </option>
+							<% if(hosts){
+								for(var i=0;i<hosts.length;i++){%>
+									<option><%=hosts[i].ip%></option>
+								<%}}%>
+							</select>
+							<label>目的路径：</label>
+							<input type="text" id="fileDesSrc">
+						</div>
+						<div>
+							<button type="button" id="transferLocal">传输</button>
+						</div>
+					</form>
+				</div>
+			<% } %>
+			</div>
+		</div>
+		<script>
+			window.onload=function(){
+				var signout=document.getElementById('signout');
+				if($('#signinbtn')){
+					$('#signinbtn').click(function(){
+						$('#cover').css('display',"block");
+						$('#signin').css('display',"block");
+					});
+					$('#signupbtn').click(function(){
+						$('#cover').css('display',"block");
+						$('#signup').css('display',"block");
+					});
+					$('#signin button:nth-child(2)').click(function(){
+						$('#cover').css('display',"none");
+						$('#signin').css('display',"none");
+					});
+					$('#signup button:nth-child(2)').click(function(){
+						$('#cover').css('display',"none");
+						$('#signup').css('display',"none");
+					});
+				}
+				$('#upload button').click(function(){
+					$.ajax({
+						type:'post',
+						data:{
+							source:$('#source').val(),
+							fileSource:$('#fileSource').val(),
+							destination:$('#destination').val(),
+							filedes:$('#filedes').val()
+						},
+						url:'/transfer',
+						success:function(data){
+							if(data){
+								var reg=/real\s+([^\s]+)\s+user\s+([^\s]+)\s+sys\s+([^\s]+)/;
+								var match=reg.exec(data);
+								console.log(match);
+								if(data.indexOf('real')>-1){
+									var str=data.slice(0,data.indexOf('real'));
+								}
+								console.log(str);
+								str=str+'real:  '+match[1]+'<br>'+'user:  '+match[2]+'<br>'+'sys:  '+match[3];
+								$('#messages').html('<h2>传输结果</h2><br><p>'+str+'</p>');
+							}
+						}
+					})
+					// var data=(function(obj){
+					// 	var str='';
+					// 	for(var i in obj){
+					// 		str+=i+"="+obj[i]+"&";
+					// 	}
+					// 	return str;
+					// })(file);
+					// if(window.XMLHttpRequest){
+					// 	xhr=new XMLHttpRequest(); 
+					// }else{
+					// 	xhr=new ActiveXObject('Microsoft.XMLHTTP');
+					// }
+					// xhr.onreadystatechange=function(){
+					// 	if(xhr.readyState==4){
+					// 		if(xhr.status>=200 && xhr.status<300){
+					// 			console.log(111);
+					// 			var data=xhr.responseText.replace(/\"/g,'');
+					// 			data=data.replace(/\\t/g,':');
+					// 			data=data.replace(/\\n/g,'<br>');
+					// 			$('#messages').innerHTML='<h2>传输结果</h2><br><p>'+data+'</p>';
+					// 		}else{
+					// 			console.warn(xhr.status);
+					// 		}
+					// 	}
+					// }
+					// xhr.open('POST','transfer',true);
+					// xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+					// xhr.send(data);
+				});
+			}
+		</script>
+	</body>
+</html>

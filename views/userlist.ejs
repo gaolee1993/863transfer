@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>用户列表</title>
+<style type="text/css">
+	table td{
+		border:1px solid grey;
+	}
+</style>
+<script type="text/javascript" src='/lib/jquery.min.js'></script>
+</head>
+<body>
+	<table>
+	<% for(var i=1;i<users.length;i++){%>     <!--接收后台传入的users -->
+		<tr id='tr-<%=i%>'>
+			<td id='td-<%=i%>'><%=users[i].name%></td>
+			<td><%=users[i].password%></td>
+			<td><button type="button" class='del' data-id='<%=i%>'>删除</button></td>
+		</tr>
+		<% } %>
+	</table>
+	<script type="text/javascript">
+	  $('.del').click(function(e) {
+   	 	var target = $(e.target);
+    	var id = target.data('id');
+    	var tr = $('#tr-' + id);
+    	var td= $('#td-'+id);
+    	var name=td.text();
+    	$.ajax({
+    		type:'DELETE',
+    		url:'/user/list?name='+name
+    	}).done(function(result){
+    		if(result.success==1){
+    			if(tr.length>0){
+    				tr.remove();
+    			}
+    		}
+    	})
+    });
+	</script>
+</body>
+</html>
